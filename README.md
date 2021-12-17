@@ -7,7 +7,9 @@ A small python tool to get relevant values from SRI invoices
 Login into your SRI account and retrieve all the XML invoice files from the period you want to process.
 
 ![Download Invoices 01](./img/instructions01.png)
+
 ![Download Invoices 02](./img/instructions02.png)
+
 ![Download Invoices 03](./img/instructions03.png)
 
 ### Installing dependencies
