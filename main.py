@@ -35,13 +35,13 @@ async def get_invoices_from_folder(folder_path: str, extension: str = 'xml') -> 
     return Path(folder_path).glob(f'*.{extension}')
 
 
-async def load_invoices(invoices: Generator[Path, None, None]) -> List[ET.Element]:
+async def load_invoices(invoices: Generator[Path, None, None], is_own: bool) -> List[ET.Element]:
 
     async def xml_from_file(invoice: Path) -> ET.Element:
         async with aiofiles.open(invoice.resolve(), 'r', encoding='utf-8') as file:
             file_as_str = await file.read()
             root_node = ET.fromstring(file_as_str)
-            return ET.fromstring(root_node.find('comprobante').text.lstrip(' \n'))
+            return root_node if is_own else ET.fromstring(root_node.find('comprobante').text.lstrip(' \n'))
 
     if not invoices:
         logging.warning('No invoices to process, exiting')
@@ -108,18 +108,20 @@ def print_values(overal_taxes: list, results: dict):
         print(f'{key:4} => $ {value/100:4}')
 
 
-def get_path_from_args() -> str:
+def get_args() -> str:
     parser = ArgumentParser()
     parser.add_argument("-p", "--path", help="Path to your invoice folder", type=str, default='./invoices')
-    return parser.parse_args().path
+    parser.add_argument("-o", "--own", help="Toggle formatting when the invoices are yours", type=bool, default=False)
+    parsed_args = parser.parse_args()
+    return parsed_args.path, parsed_args.own
 
 
 async def main():
 
-    input_folder = get_path_from_args()
+    input_folder, own = get_args()
 
     invoice_paths = await get_invoices_from_folder(input_folder)
-    invoices = await load_invoices(invoice_paths)
+    invoices = await load_invoices(invoice_paths, own)
     result_values = process_invoices(invoices)
 
     print_values(*result_values)
